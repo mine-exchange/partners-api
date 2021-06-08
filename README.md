@@ -72,16 +72,16 @@ Response:
             "currency_send": "BTC",
             "payment_variants": {
                 "invoice": {
-                    "url": ***,
-                    "error": null
+                    "url": "https://***",
+                    "error": null,
                 },
                 "direct": {
-                    "url": ***
-                    "error": null
+                    "url": "https://***",
+                    "error": null,
                 },
                 "manual": {
-                    "number": ***
-                    "error": null
+                    "number": "123***",
+                    "error": null,
                 }
             },
             "account_receive": "79****7",
@@ -96,7 +96,7 @@ Response:
             "currency_send": "RUB",
             "payment_variants": {	          
                 "invoice": {
-                    "url": ***,
+                    "url": "https://***",
                     "error": null
                 },
 	    },	    

@@ -394,7 +394,7 @@ hmac(sha512(SignatureKey, Request.Body))
 
 **[GET] /{API_PREFIX}/rates?directions={{CurrencyA}}:{{CurrencyB}},{{CurrencyX}}:{{CurrencyY}}**
 
-#### Успешный ответ(200)
+#### Успешный ответ (200)
 ```js
 {
     "success": true,

@@ -53,7 +53,7 @@ X-Signature: "{{Signature}}"
 
 Сама подпись генерируется по алгоритму: 
 ```php
-hmac(sha512(SignatureKey, Request.Body))
+hmac(sha256(SignatureKey, Request.Body))
 ```
 (Где SignatureKey — ключ подписи, а Request.Body - тело конкретного отправляемого запроса).
 

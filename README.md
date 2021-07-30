@@ -310,7 +310,7 @@ hmac(sha256(SignatureKey, Request.Body))
 
 ```js
 {
-    "orders_ids": [
+    "ids": [
         "{{ID заказа партнера}}",
         ...
     ]
@@ -323,7 +323,7 @@ hmac(sha256(SignatureKey, Request.Body))
     "success": true,
     "code": 200,
     "data": {
-        "payed": {
+        "confirmed": {
             "{{ID заказа партнера}}": {{Order}}
             ...
         },
@@ -346,7 +346,7 @@ hmac(sha256(SignatureKey, Request.Body))
 **[DELETE] /{API_PREFIX}/orders**
 ```js
 {
-    "orders_ids": [
+    "ids": [
         "{{ID заказа партнера}}",
         ...
     ]

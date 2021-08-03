@@ -196,7 +196,7 @@ hmac(sha256(SignatureKey, Request.Body))
 ```js
 {
     "details": { 
-        "receipts": {
+        "payout-receipts": {
             "{{qiwi_transaction_id}}": {
                 "pdf": "{{https://************.pdf}}",
                 "jpeg": "{{https://************.jpeg}}",

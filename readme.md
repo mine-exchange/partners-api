@@ -18,7 +18,7 @@
 
 Для вашего удобства мы создали коллекцию в [postman](https://www.postman.com/), которая повторяет все методы API. Вы можете потестировать на ней функциональность и поиграть с запросами.
 1. В postman выбрать пункт меню "Import file", например в вкладке "Home"
-2. Перейти в вкладку "Link" и импортировать следующую ссылку: ```https://api.postman.com/collections/21262179-a7496b21-df82-43f6-aae8-74b48e3b49e6?access_key=PMAT-01H83YE21HHE2RAA4APRH61SJZ```
+2. Перейти в вкладку "Link" и импортировать следующую ссылку: ```https://api.postman.com/collections/6328473-175a6884-a81b-4019-a4f0-caf440ba9bdc?access_key=PMAT-01J065GHKE6NQJHD63EMSBB5RR```
 3. Перейти курсором на коллекцию "MINE Partners API", выбрать вкладку "Pre-request script" и вписать ваши ключи в блоке "Configuration"
 
 ---

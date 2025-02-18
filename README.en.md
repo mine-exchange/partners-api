@@ -3,64 +3,71 @@
 ## Typical Use Cases 🔀
 
 ### Working with Orders:
-- [Create an Order](#creating-orders)
-- Check the status – usually via a [webhook notification](#webhook-notifications-for-order-statuses-📢), although in some cases you can explicitly request the [status of a group of orders](#retrieving-orders)
-- Sometimes you need to [cancel an order](#canceling-orders) before it enters processing.
+- [Create Order](#order-creation);
+- Status check, usually [via webhook notification](#webhook-order-status-notifications-), although in some cases you can make an explicit request for [retrieving orders](#retrieving-orders);
+- Sometimes it is necessary to [cancel an order](#order-cancellation) before it starts processing.
 
-### Sometimes You May Need to Check:
+### Sometimes, Additional Information Is Needed:
 - [Pairs, Rates, Limits, and Commissions](#retrieving-current-pairs-rates-minimummaximum-amount-limits-and-reserves)
 - [MineCoin Account Balances](#retrieving-minecoin-balances)
+---
 
-## ⚡️ Quick Start (Method Collection with Signature Automation in Postman)
+## ⚡️ Quick Start (Postman Collection with Automated Signature)
+
 For your convenience, we have created a collection in [Postman](https://www.postman.com/) that replicates all API methods. You can test its functionality and experiment with the requests.
-1. In Postman, select the **Import File** option (for example, on the **Home** tab).
-2. Switch to the **Link** tab and import the following URL:  
+1. In Postman, select the "Import file" option (for example, from the "Home" tab).
+2. Switch to the "Link" tab and import the following URL:  
    `https://api.postman.com/collections/6328473-21626561-38fb-44cd-8c82-e24bc4047d2a?access_key=PMAT-01HT2VGXW98N3BSTC169WZ0HC7`
-3. Hover over the imported collection, select the **Variables** tab, and enter your configuration in the **Current Value** column.
+5. Hover over the imported collection, select the "Variables" tab, and enter your configuration in the "Current value" column.
 
 ## ⚠️ Financial Control
-For some pairs, order recalculation applies. This means that if an incorrect amount is received from the client, the order is recalculated and executed based on the received amount. When receiving the final status of an order (preferably via webhook), you must use the amounts provided in the API response in your system. It is unacceptable to rely on the credited amount without verifying the sums.
+For some pairs, orders are recalculated. This means that if an incorrect amount is received from the client, the order is recalculated and executed based on the received sum. When receiving the final status of an order (preferably via webhook), you must take into account the amounts provided in the API response and use them in your system. It is unacceptable to trust a credit without verifying the amounts.
 
-Also, we recommend regularly reconciling the balances from our API with those in your system.
+We also recommend regularly reconciling the balances from our API with those in your system.
 
 ## ⚠️ Network Loss Control
-Although rare, the connection between servers may drop, so you need to validate that the response data is as expected:
-1. If the request is processed correctly, the client will receive a 2xx HTTP code. Otherwise, an error occurred and the [response body contains its details](#standard-error-response-for-all-requests). Alternatively, you can check the `success` parameter in the JSON response body (1 if the request succeeded, otherwise 0).
-2. The API always responds with JSON. If you do not receive valid JSON, you cannot be sure whether your request succeeded or was lost in transit. For critical requests (for example, payouts), verify such requests by any available means and do not consider the request completed (or failed) until you receive explicit confirmation:
-    - In some cases, you can send a follow-up API request to check the status. For instance, if you made a payout request and are unsure if it went through, you can [check for the existence and status of the order](#retrieving-orders).
-    - If automated verification is not possible, contact our technical support. Our support is very responsive, so in such exceptional situations you will receive an answer as quickly as possible.
+Connections between servers, though rare, may drop, so you must validate that the data received in the response is what you expect:
+1. If the request is processed correctly, the client receives a 2xx HTTP code. In other cases, the request has failed, and [the response body contains its details](#standard-error-response-for-all-requests). An alternative way to verify the request’s success is by checking the `success` parameter in the JSON response body (1 if the request succeeded, otherwise 0).
+2. The API always responds with JSON. If you do not receive valid JSON, you cannot be sure whether your request was processed or lost along the way. In the case of critical requests (for example, payouts), you should verify such requests by any available means and not consider them completed or failed until you receive a definitive confirmation.
+    - In some cases, you can send a follow-up API request to check the status. For example, if you made a payout request and are unsure whether it went through, you can [retrieve orders](#retrieving-orders) to check its existence and status.
+    - If automated verification is not possible, please contact technical support. Our support team is very responsive, so in such an exceptional situation, you will receive a reply as quickly as possible 💪
 
 ## Security 🛡
-For security, two keys are used: the authorization key and the signature key. Both keys are generated by the user in the personal account under the **API Settings** tab.
+
+To ensure security, two keys are used: the authorization key and the signature key.  
+Both keys are generated by the user in the personal account under the "API Settings" tab.
 
 ### API Authorization
-For API authorization, an authorization key is used and must be provided as a header:
+For API authorization, an authorization key is used, which must be passed as a header:
 ```js
 Authorization: "Bearer {{AuthKey}}"
 ```
 
-### Signing API Requests
-For security reasons, API requests require a signature that hashes the request body using the signature key. The generated signature must be passed as a header:
+### API Request Signature
+For security purposes, API requests require a signature that hashes the request body using the signature key.  
+The generated signature must be passed as a header:
 ```js
 X-Signature: "{{Signature}}"
 ```
 
-The signature is generated using the algorithm:
+The signature is generated using the following algorithm:
 ```php
 hmac(sha256(SignatureKey, Request.Body))
 ```
-*(Where **SignatureKey** is your signature key and **Request.Body** is the body of the specific request.)*
+(Where `SignatureKey` is the signature key, and `Request.Body` is the body of the specific request being sent.)
 
-If the request body is absent (GET requests), the signature is generated from an empty string.
+If the request body is absent (GET requests), the signature is computed on an empty string.
 
-A similar [approach to signing requests](#verifying-the-authenticity-of-webhook-notifications) is used when sending webhook notifications from our side. In API requests from you to us, you generate the signature, and we verify it. When sending webhook notifications from us to you, the signature is generated by us, and you verify it.
+📢 A similar [approach to signing requests](#webhook-notification-verification) is used when sending webhook notifications from our side. The only difference is that for API requests from you to us, you generate the signature on your side, and we verify it. When sending webhook notifications from us to you, the signature is generated by us, and you verify it.
 
-For quick testing, we recommend using [our Postman collection](#⚡️-quick-start-(method-collection-with-signature-automation-in-postman)).
+⚡️ For quick testing, we recommend using [our Postman collection](#quick-start-postman-collection-with-automated-signature).
 
 ### Allowed IP Addresses
-For enhanced security, access to the API methods is allowed only from certain IP addresses (configured in your personal account under the **API Settings** tab).
+For enhanced security, access to the API methods is allowed only from specific IP addresses (configured in your personal account under the "API Settings" tab).
 
-You can specify the symbol "*" to allow access from all IP addresses, but we **strongly advise against doing this in production**.
+⚠️ You can use the symbol "**\***" to allow access from all IP addresses, but we **strongly advise against doing this in production**.
+
+---
 
 ## Headers for All API Requests
 ```json
@@ -72,7 +79,7 @@ You can specify the symbol "*" to allow access from all IP addresses, but we **s
 }
 ```
 
-## Standard Error Response for All Requests
+## Standard Error Response for All Requests:
 ```json
 {
     "success": 0,
@@ -84,30 +91,30 @@ You can specify the symbol "*" to allow access from all IP addresses, but we **s
 }
 ```
 
-## Schema of the "Order" Object (Used in Many API Requests and Responses)
+## Order Object Schema (Used in Numerous API Requests and Responses)
 ```js
 {
     "order_id": "{{Partner system order ID}}",
     "inbound": {
-        "currency": "{{Currency being sent}}",
-        "account": "{{Sender's account}}",
-        "amount": "{{Amount being sent}}",
-        "amount_initial": "{{Initial send amount; used in API responses}}",
+        "currency": "{{Sending currency}}",
+        "account": "{{Sender account}}",
+        "amount": "{{Sending amount}}",
+        "amount_initial": "{{Initial sending amount; used in API responses}}",
         "txid": "{{Incoming transaction ID; used in API responses}}", //nullable
         "code": "{{Payment code; used in API requests}}" //nullable        
     },
     "outbound": {
         "currency": "{{Payout currency}}",
-        "account": "{{Recipient's account}}",
+        "account": "{{Recipient account}}",
         "amount": "{{Payout amount}}",
         "amount_initial": "{{Initial payout amount; used in API responses}}", 
         "txid": "{{Outgoing transaction ID; used in API responses}}", //nullable
         "memo": "{{Cryptocurrency wallet memo; used in API requests}}" //nullable       
     },
-    "is_customer_confirmation_need": "{{Flag indicating if customer confirmation is required; used in API responses}}",
+    "is_customer_confirmation_need": "{{Flag indicating whether customer confirmation is required (used in API responses)}}",
     "rate": "{{Exchange rate; used in API responses}}",
     "rate_initial": "{{Initial exchange rate; used in API responses}}",
-    "rate_type": "{{Type of exchange rate: inbound|outbound; used in API responses}}",
+    "rate_type": "{{Exchange rate type: inbound|outbound; used in API responses}}",
     "comment": "{{Order comment (optional)}}",
     "status": "{{Operation status: 'new|processing|incoming_unconfirmed|incoming_confirmed|moderation|error|canceled|success'; used in API responses}}",
     "created_at": "{{Creation time in ISO 8601 format; used in API responses}}",
@@ -115,29 +122,36 @@ You can specify the symbol "*" to allow access from all IP addresses, but we **s
 }
 ```
 
-### What is `amount_initial`?
-When [initiating an order](#creating-orders), `amount_initial` is not provided. You must specify either `inbound.amount` or `outbound.amount`, which will then be immediately fixed as `amount_initial`.
+### What Is amount_initial?
 
-Reasons why `amount` and `amount_initial` may differ:
-- An order is created for CARDUAH → BTC for 0.1 BTC. The calculation determines that 100k UAH is required, but only 50k was paid; the engine recalculates the order and pays out 0.05 BTC.
-- Occasionally, slight discrepancies occur due to backend recalculations.
+When [initiating an order](#order-creation) the `amount_initial` is not passed. You must specify either `outbound.amount` or `inbound.amount`, which will then be immediately fixed as `amount_initial`.
 
-### Possible Values for the `status` Parameter
+Reasons why `amount` and `amount_initial` might differ:
+- An order was created for CARDUAH → BTC for 0.1 BTC. The calculation resulted in a requirement to pay 100K UAH, but only 50K UAH was paid, so the engine recalculated the order and disbursed 0.05 BTC.
+- Sometimes minor discrepancies occur due to internal recalculations.
 
-| **status**               | **Description**                                                                                                                                             |
-|--------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| **new**                  | New order, queued and not yet processed.                                                                                                                    |
-| **processing**           | Order is being processed, awaiting action from the user.                                                                                                    |
-| **incoming_unconfirmed** | After the client makes a payment, the system may see the transaction on the network but the funds have not yet arrived. This indicates a pending payment. |
-| **incoming_confirmed**   | The client’s payment has been confirmed.                                                                                                                    |
-| **moderation**           | Order is under review by a service manager (rare status).                                                                                                   |
-| **error**                | An error occurred with the order. This status is not final; please contact technical support for clarification.                                               |
-| **canceled**             | Order has been canceled (by the user or system). In MineCoin pairs, this indicates that the order is final, funds were not sent, and have been returned to the MineCoin account. Possible reasons include incorrect recipient details or bank restrictions. Once this status is received, you may retry the transaction. |
-| **success**              | Funds have been paid out; order is completed.                                                                                                               |
+### Possible Status Parameter Values
 
-## Mandatory Parameters That Complement Order Information
+| **status**               | **Description**                                                                                                                                                                                                                 |
+|--------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| **new**                  | New order, placed in the queue, not processed.                                                                                                                                                                                 |
+| **processing**           | Order is being processed, awaiting user action.                                                                                                                                                                                |
+| **incoming_unconfirmed** | In some cases, after the client’s payment, the system sees the transaction on the network, but the funds have not yet been received and the attempt may fail. This status indicates that the incoming payment is pending. |
+| **incoming_confirmed**   | The client’s payment has been confirmed.                                                                                                                                                                                         |
+| **moderation**           | The order is undergoing moderation by the service manager. A rare status.                                                                                                                                                        |
+| ❓ **error**             | There is an error in the order. This status is not final—please contact support for clarification.                                                                                                                                |
+| 🏁 **canceled**          | Order canceled (by the user or system). For MineCoin pairs, this status indicates that the order has reached a final state; funds have not been sent and have been returned to the MineCoin account. Possible causes include incorrect recipient details, issuer bank restrictions, or other reasons. Once this status is received, you may retry the transaction. |
+| 🏁 **success**           | Funds have been disbursed; the order has been paid out.                                                                                                                                                                          |
 
-### Order.extra — Additional Data Provided by the Partner When Creating the Order (Used in Requests and Responses)
+🏁 — Final statuses.
+
+❓ **error** — An unknown exceptional situation occurred. Please contact support for further details. Do not attempt to resend.
+
+---
+
+### Mandatory Parameters That Supplement Order Information:
+
+#### Order.extra — Additional Data That the Partner May Have Provided When Creating the Order (Used in Requests and Responses)
 ```js
 {
     "extra": {
@@ -145,58 +159,62 @@ Reasons why `amount` and `amount_initial` may differ:
         "failed_url": "{{URL for redirection after failed payment}}", //nullable
         "client": {
             "id": "{{User ID in your system}}",
-            "email": "{{User's email address in your system}}",
-            "phone": "{{User's phone number in your system}}", //nullable
-            "first_name": "{{User's first name in your system}}", //nullable
-            "last_name": "{{User's last name in your system}}", //nullable
-            "middle_nanme": "{{User's middle name in your system}}", //nullable
-            "ip": "{{IP address of the user performing the action in your system}}",
-            "user_agent": "{{User agent (browser) of the user. Available in $_SERVER['HTTP_USER_AGENT'] for PHP developers}}"
+            "email": "{{User email address in your system}}",
+            "phone": "{{User phone number in your system}}", //nullable
+            "first_name": "{{User first name in your system}}", //nullable
+            "last_name": "{{User last name in your system}}", //nullable
+            "middle_nanme": "{{User middle name in your system}}", //nullable
+            "ip": "{{User's IP address performing the action}}",
+            "user_agent": "{{User's browser user agent. For PHP developers: available in $_SERVER['HTTP_USER_AGENT']}}"
         }
     }
 }
 ```
 
-## Optional Parameters That Complement Order Information
+### Optional but Possible Parameters That Supplement Order Information:
 
-### Order.payment_variants — Possible Payment Methods for the Order by the Client (Used in Responses)
+#### Order.payment_variants — Possible Payment Methods for the Order by the Client (Used in Responses)
 ```js
 {
     "payment_variants": {
         "invoice": {
             "url": "{{https://***}}",
-            "error": null | "{{Error description}}"
+            "error": null|"{{Error description}}"
         },
         "direct": {
             "url": "{{https://***}}",
-            "error": null | "{{Error description}}"
+            "error": null|"{{Error description}}"
         },
         "manual": {
             "number": "{{***}}",
-            "memo": null | "{{memo}}",
-            "error": null | "{{Error description}}"
+            "memo": null|"{{memo}}",
+            "error": null|"{{Error description}}"
         }
     }
 }
 ```   
-*Payment variants details depend on the receiving payment system.*
 
-| **Payment System**  | **Object in payment_variants** | **Description**                                                            |
-|---------------------|---------------------------------|----------------------------------------------------------------------------|
-| **Jumbo**           | invoice                         | (url) A link to redirect the client to the issued invoice                  |
-| **Payeer**          | direct                          | (url) A link to redirect the client to the direct payment page on the wallet |
-| **BITCOIN (BTC)**   | manual                          | (number) The BTC wallet number for payment                                 |
-| **Other Merchants** | direct                          | (url) A link to the merchant’s payment form                                |
+**Payment Details in payment_variants Depending on the Receiving Payment System**
 
-Each element in **payment_variants** includes:
-- **error** (mandatory; null if no error, otherwise a text description explaining why the method cannot be used).
-- One of the following payment details is required:
-  - **url**: The URL of the payment system for redirection.
-  - **number**: Payment details for manual transfers.
-- **note** (an optional textual note to assist developers during integration).
+⚠️ This description is current at the time of writing and serves solely as a guide for integrators. The set of parameters may change.
 
-### Order.details — Additional Details About the Order (Used in Responses)
-Currently, for payouts from some payment systems, receipts are generated in `Order.details.receipts`. Clients can download these receipts to confirm the payment.
+| **Payment System**        | **Object in payment_variants** | **Description**                                                                           |
+|---------------------------|--------------------------------|-------------------------------------------------------------------------------------------|
+| **Jumbo**                 | invoice                        | (url) Link for redirecting the client to the issued invoice.                              |
+| **Payeer**                | direct                         | (url) Link for redirecting the client to the direct payment page on the wallet.           |
+| **BITCOIN (BTC)**         | manual                         | (number) BTC wallet number for payment.                                                   |
+| **Other Merchants**       | direct                         | (url) Link to the merchant's payment form.                                                |
+
+**Each element of the "payment_variants" object contains the following parameters:**
+- **error** (Mandatory. Defaults to null if there is no error. Otherwise, a text description of the error that prevents the use of this payment method.)
+- One of the following payment details (Mandatory):
+  - **url**: The URL of the payment system to which the client should be redirected.
+  - **number**: Details to which the client must manually transfer payment.
+- **note** (An optional text note to assist programmers with integration and simplify the integration process; sometimes present.)
+
+#### Order.details — Used in Responses to Provide Additional Details for the Order
+
+Currently, for payouts from some payment systems, receipts are generated in `Order.details.receipts`. Clients can download these receipts to confirm the payout.
 ```js
 {
     "details": {
@@ -208,19 +226,23 @@ Currently, for payouts from some payment systems, receipts are generated in `Ord
                 "amount": {{amount}}
             },
             ...
-        }
+        },
+        ... 
     }
 }
-```
+```        
 
-## API Methods
+---
+
+## API Methods 🔢
 
 ### Retrieving Orders
-⚠️ We do not recommend polling this method frequently to avoid delays. For notifications about order status changes, please use the [webhook notifications for order statuses 📢](#webhook-notifications-for-order-statuses-📢) feature.
+
+⚠️ We do not recommend using this method regularly to avoid delays. For notifications on order status changes, the "[Webhook Order Status Notifications](#webhook-order-status-notifications-)" tool is provided.
 
 **[GET] /{{API_PARTNERS_PREFIX}}/orders?ids={{id1}},{{id2}},...&page={{pages_count}}&per_page={{items_count}}**
-- **ids**: Comma-separated partner order IDs (a single order may be specified).
-- **page**: Optional parameter for the page number to retrieve.
+- **ids**: Comma-separated list of partner order IDs. You may specify a single order.
+- **page**: Optional parameter, the page number of the list to retrieve.
 - **per_page**: Number of items per page.
 
 #### Successful Response (200)
@@ -229,8 +251,8 @@ Currently, for payouts from some payment systems, receipts are generated in `Ord
     "success": 1,
     "code": 200,
     "data": {
-        "total": {{Total number of items}},
-        "per_page": {{Items per page}},
+        "total": {{Total number of items in the selection}},
+        "per_page": {{Number of items per page}},
         "page": {{Current page}},
         "orders": {
             "{{Partner order ID}}": {{Order}},
@@ -239,12 +261,15 @@ Currently, for payouts from some payment systems, receipts are generated in `Ord
     }
 }
 ```
-*See also: Schema of the "Order" Object.*
+ℹ️ See also: [Order Object Schema (Used in Numerous API Requests and Responses)](#order-object-schema-used-in-numerous-api-requests-and-responses).
 
-If no orders match your query parameters, the `data.orders` field will be an empty object. If you use this method to poll order statuses (which is highly discouraged but sometimes necessary), ensure you check for the presence of your orders in the object keys.
+⚠️ If the order status search does not find any orders matching your query parameters, you will receive an empty object in the `data.orders` field. Therefore, if you use this method to re-query order statuses (which is highly discouraged, although we understand that various business cases may require it), you should verify the presence of your orders in the keys of the `data.orders` object.
 
-### Creating Orders
-This request creates orders. After an order is created, you must [make a payment using the provided payment details](#orderpayment_variants-possible-payment-methods-for-the-order-by-the-client-used-in-responses) from the response to complete it.
+---
+
+### Order Creation
+
+This request creates orders. After creating an order, to execute it you must [make a payment using the provided details](#order-payment-variants) found in the response.
 
 **[POST] /{{API_PARTNERS_PREFIX}}/orders**
 ```js
@@ -255,19 +280,19 @@ This request creates orders. After an order is created, you must [make a payment
     ]
 }
 ```
-*See also: Schema of the "Order" Object.*
+ℹ️ See also: [Order Object Schema (Used in Numerous API Requests and Responses)](#order-object-schema-used-in-numerous-api-requests-and-responses).
 
-**Please Note:**
-1. You cannot create an order with the same ID from the same partner.
-2. When creating orders, the `inbound.account` field is sometimes not required (e.g., for a MineCoin payout).
-3. It is acceptable to specify only one amount — either the amount to be received (`inbound.amount`) or the payout amount (`outbound.amount`). The other amount is calculated automatically based on rates and commissions.
-4. It is mandatory to include extra parameters with data about the order and the user in your system.
-5. You may include a "comment" field for your convenience; however, the recipient will not see it. This field appears only in the API order information and in your personal account.
+**Please note:**
+1. It is not possible to create an order with the same ID from the same partner.
+2. When creating orders, the field `inbound.account` is not always required—for example, in the case of payouts with MineCoin.
+3. It is allowed to specify only one of the amounts — either the amount to be received (`inbound.amount`) or the payout amount (`outbound.amount`). The other amount is automatically calculated based on rates and fees.
+4. It is mandatory to include [extra parameters](#order-extra-additional-data) with details about the order and the user in your system.
+5. You may include a "comment" field for your convenience; however, the recipient will not see it. This field will appear in the order information via the API and in the personal account.
 
-💡 If you have a case where the order ID need not match your system's ID, the API can generate a random order ID. To do this, specify:
+💡 If you have a special case where it is not necessary for the order ID to match the ID in your system, the API can generate the order's `{{order_id}}` randomly. To do so, specify it as follows:
 ```js
 {
-    "order_id": "auto-uid"
+    "order_id": "auto-uid",
 }
 ```
 
@@ -289,8 +314,11 @@ This request creates orders. After an order is created, you must [make a payment
 }
 ```
 
-### Confirming Order Payment
-ℹ️ Orders can only be confirmed when in the **new** status. Confirmation is required if the `is_customer_confirmation_need` flag in the Order object is set to `true`.
+---
+
+### Confirming Orders by Customer
+
+ℹ️ Order confirmation is only allowed for orders with a **new** status. Confirmation is required if the Order object's `is_customer_confirmation_need` flag is set to `true`.
 
 **[PUT] /{{API_PARTNERS_PREFIX}}/orders/confirm-by-customer**
 ```js
@@ -309,7 +337,7 @@ This request creates orders. After an order is created, you must [make a payment
     "code": 200,
     "data": {
         "invalid": {
-            "{{Partner order ID}}": "{{Reason for confirmation failure}}",
+            "{{Partner order ID}}": "{{Reason the confirmation could not be processed}}",
             ...
         },
         "confirmed": {
@@ -319,12 +347,14 @@ This request creates orders. After an order is created, you must [make a payment
     }
 }
 ```
-*See also: Schema of the "Order" Object.*
+ℹ️ See also: [Order Object Schema (Used in Numerous API Requests and Responses)](#order-object-schema-used-in-numerous-api-requests-and-responses).
 
-### Canceling Orders
-In certain critical cases, partners may need to cancel created orders before the payout process begins.
+---
 
-ℹ️ Cancellation is permitted only for orders in the **new** or **processing** statuses. If the payment process has begun, cancellation via this API method is not possible; in that case, contact our operators immediately.
+### Order Cancellation
+In some critical cases, partners may need to cancel orders before the payout process begins.
+
+ℹ️ Cancellation is allowed only for orders in the **new** or **processing** statuses. If the payment process has already started, cancellation via this API method is not possible. In that case, please contact our operators immediately.
 
 **[DELETE] /{{API_PARTNERS_PREFIX}}/orders**
 ```js
@@ -353,10 +383,13 @@ In certain critical cases, partners may need to cancel created orders before the
     }
 }
 ```
-*See also: Schema of the "Order" Object.*
+ℹ️ See also: [Order Object Schema (Used in Numerous API Requests and Responses)](#order-object-schema-used-in-numerous-api-requests-and-responses).
+
+---
 
 ### Retrieving MineCoin Balances
-Retrieve the balances of the deposit account in our system (each account is tied to a specific currency).
+
+Balances of the deposit account in our system (each account is tied to a specific currency).
 
 **[GET] /{{API_PARTNERS_PREFIX}}/balances**
 
@@ -368,16 +401,19 @@ Retrieve the balances of the deposit account in our system (each account is tied
     "data": {
         "BTC": {{Balance amount}},
         "USDT": {{Balance amount}},
-        "UAH": {{Balance amount}}
+        "UAH": {{Balance amount}}        
     }
 }
 ```
 
+---
+
 ### Retrieving Current Pairs, Rates, Minimum/Maximum Amount Limits, and Reserves
-**[GET] /{{API_PARTNERS_PREFIX}}/pairs?names={{CurrencyA}}:{{CurrencyB}},{{CurrencyX}}:{{CurrencyY}},...&inbound_currencies={{CurrencyA}},{{CurrencyB}},...&outbound_currencies={{CurrencyA}},{{CurrencyB}}**
-- **names**: Optional, comma-separated pair names in the format `"{{CurrencyA}}:{{CurrencyB}}"`
-- **inbound_currencies**: Optional, comma-separated inbound currency codes.
-- **outbound_currencies**: Optional, comma-separated outbound currency codes.
+
+**[GET] /{{API_PARTNERS_PREFIX}}/pairs?names={{CurrencyA}}:{{CurrencyB}},{{CurrencyX}}:{{CurrencyY}},...&inbound_currencies={{CurrencyA}},{{CurrencyB}}...&outbound_currencies={{CurrencyA}},{{CurrencyB}}**
+- **names**: Optional parameter; a comma-separated list of pair names in the format: `"{{CurrencyA}}:{{CurrencyB}}"`.
+- **inbound_currencies**: Optional parameter; a comma-separated list of inbound currency codes.
+- **outbound_currencies**: Optional parameter; a comma-separated list of outbound currency codes.
 
 #### Successful Response (200)
 ```js
@@ -388,34 +424,41 @@ Retrieve the balances of the deposit account in our system (each account is tied
         "{{CurrencyA}}:{{CurrencyB}}": {
             "inbound": {
                 "currency": "CurrencyA",
-                "rate": {{Exchange rate (usually one rate is 1 and the other is fractional)}},
-                "is_account_required": {{Indicates whether the 'account' field is required when creating an order}}
+                "rate": {{Exchange rate of this currency relative to the other in the pair. Typically, one of the rates is 1 and the other is a fractional number}},
+                "is_account_required": {{Whether the 'account' field is required when creating an order}}
             },
             "outbound": {
                 "currency": "CurrencyB",
-                "rate": {{Exchange rate (usually one rate is 1 and the other is fractional)}},
-                "is_account_required": {{Indicates whether the 'account' field is required when creating an order}}
+                "rate": {{Exchange rate of this currency relative to the other in the pair. Typically, one of the rates is 1 and the other is a fractional number}},
+                "is_account_required": {{Whether the 'account' field is required when creating an order}}
             },
-            "rate": {{Overall exchange rate for the pair}},
-            "min_amount": {{Minimum amount available for processing}},
-            "max_amount": "{{Maximum amount available for processing}}",
-            "reserve": {{Available reserve of the payout currency}}
+            "rate": {{Overall exchange rate for the specified currency pair}},
+            "min_amount": {{Minimum available amount of the first currency for processing}},
+            "max_amount": "{{Maximum available amount of the first currency for processing}}",
+            "reserve": {{Available reserve amount for the payout currency}}
         },
         ...
     }
 }
 ```
 
-### Webhook Notifications for Order Statuses 📢
-You can subscribe a URL on your server to receive notifications about order status changes.
+---
 
-The **Callback URL** is specified in your personal account under the **API Settings** tab. When an order's status changes, the system will send an HTTP **POST** request to your Callback URL with a body containing the **Order** object.
+## Webhook Order Status Notifications 📢
 
-Your server must respond with a **2XX** status code. If not, the webhook will be retried with increasing delays (up to 10 attempts, though this may change without notice).
+You can (and we strongly recommend) subscribe a URL on your server to receive notifications about order status changes.
 
-For testing, you can use the tool [webhook.site](https://webhook.site) to obtain a URL and monitor incoming notifications.
+The "***{{Callback URL}}***" is specified in your personal account under the "API Settings" tab.  
+When an order’s status changes, the system will send an HTTP POST request to your "***{{Callback URL}}***" with a request body containing the **{{Order}}** object (see [Order Object Schema (Used in Numerous API Requests and Responses)](#order-object-schema-used-in-numerous-api-requests-and-responses)).
 
-### Verifying the Authenticity of Webhook Notifications
-For security, webhook notifications include a signature that hashes the request body using the signature key.
+Your server must respond with a **2XX** status code. If this does not occur, the webhook will be retried after a delay. With each subsequent failure, the delay increases and the webhook is retried. At the time of writing, we have set 10 notification retries, but this may change without notice.
 
-We strongly recommend verifying this signature on your side by comparing the signature received in the `X-Signature` header with the one generated locally using the same algorithm as for [Signing API Requests](#signing-api-requests).
+💡 For testing webhooks, you can use the excellent third-party tool: [webhook.site](https://webhook.site), which provides a URL for notifications and allows you to monitor their arrival via your browser.
+
+### Webhook Notification Verification
+
+For security purposes (to verify that the webhook was sent from an official source), webhook notifications include a signature that hashes the request body using the signature key.
+
+You can (and we strongly recommend) verify the signature on your side by comparing the signature received in the header (`X-Signature`) with one generated on your side.
+
+The signature is generated automatically using the exact same algorithm as for [API request signatures](#api-request-signature).

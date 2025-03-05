@@ -190,6 +190,7 @@ hmac(sha256(SignatureKey, Request.Body))
         "manual": {
             "number": "{{***}}",
             "memo": null|"{{memo}}",
+            "holder_name": null|"{{holder_name}}",
             "error": null|"{{Описание ошибки}}"
         }
     }
